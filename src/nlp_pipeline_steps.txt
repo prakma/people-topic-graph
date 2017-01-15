@@ -1,0 +1,11 @@
+1. Fix text ( =20, etc replaced with their characters)
+2. parse each file
+3. classify as clutter, announcements, non-material
+4. process short, medium and long emails on separate algorithms
+	- extract , to, from, cc, bcc, other email headers
+	- extract salutation, body, closing, signature, template enclosures ( such as confidential statement)
+	- from body
+		- extract para
+			-extract sentences
+		- extract named entities ( Orgs, persons, places)
+		- extract noun phrases
