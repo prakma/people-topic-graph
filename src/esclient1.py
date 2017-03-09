@@ -5,10 +5,15 @@ from elasticsearch import Elasticsearch
 import logging
 import sys
 import os
+import json
+import dateutil.parser
+
+# import 
+import enron_file_parser
 
 
-ENRON_MAILDIR_PATH = '/home/mprakash/Documents/enron-data/maildir'
-
+# ENRON_MAILDIR_PATH = '/home/mprakash/Documents/enron-data/maildir'
+ENRON_MAILDIR_PATH = '/Users/manoj/Documents/Projects/tprojs/machine_learning/enron_data/maildir'
 es = Elasticsearch()
 
 log = logging.getLogger()
@@ -30,35 +35,50 @@ def all_enron_file_list(enron_maildir_path):
 		# print 'root->', folder_name, dir_path
 		relevant_files = [ file for file in files if folder_name not in ['all_documents']]
 		for yfile in relevant_files:
-			print  'path->', dir_path, 'file->', yfile
+			# print  'path->', dir_path, 'file->', yfile
 			file_list.append(dir_path+'/'+yfile)
 	return file_list
 
 
-# def stream_enron_files(enron_maildir_path):
-# 	for x in file_array:
-# 		yield enron_maildir_path + '/' + x
+def create_es_doc_object(doc_id, headers, content_text):
+	required_fields = ['FROM', 'TO', 'CC', 'BCC','X-FROM', 'X-TO', 'X-CC', 'X-BCC']
+	es_dict = {k:v for k,v in headers.iteritems() if k.upper() in required_fields and v}
+	es_dict['content'] = content_text
+	es_dict['doc_id'] = doc_id
+	es_dict['sent_time'] = dateutil.parser.parse(headers['Date'])
+	print "es dict", es_dict
+	print 'sent time', es_dict['sent_time']
+	return es_dict
 
-def file_2_esdoc(file_path):
+
+
+def file_2_esdoc(file_path, relative_path):
 	try:
 		parser = enron_file_parser.EnronParser()
-		header, content_text = parser.parse_file(file_path)
-		es_doc = populate_es_doc(file_path, headers, content_text)
+		headers, content_text = parser.parse_file(file_path)
+		es_doc = create_es_doc_object(relative_path, headers, content_text)
 		return es_doc
 	except:
 		log.error('Error in parsing ->')
 		log.error(file_path)
-		# return "PARSE_ERROR"
-		return TaggedDocument(utils.to_unicode("PARSE_ERROR").lower().split(), [file_path])
+		raise
+		# return None
+
 
 def stream_paragraph(enron_maildir_path):
+	# file_array = all_enron_file_list(enron_maildir_path)
+	file_array = ['allen-p/_sent_mail/1.']
 	for x in file_array:
-		yield file_2_esdoc(enron_maildir_path + '/' + x)
+		log.info('read enron file %s', x)
+		yield file_2_esdoc(enron_maildir_path + '/' + x, x)
 
-def populate_es(esdoc, doc_id):
-	doc = {}
-	res = es.index(index='test-index', doc_type='emaildb', id=1, body=doc)
-	print res
+def populate_es(esdoc_dict):
+	if(esdoc_dict is not None):
+		print 'doc_id for es ', esdoc_dict['doc_id']
+		res = es.index(index='enron_commindex', doc_type='emaildb', id=esdoc_dict['doc_id'], body=json.dumps(esdoc_dict))
+		print res
+	else:
+		log.error('Ignoring. None object cannot be created in ES')
 
 
 
@@ -73,8 +93,13 @@ def populate_es(esdoc, doc_id):
 # res = es.index(index='test-index', doc_type='emaildb', id=1, body=doc)
 # print res
 
-file_array = all_enron_file_list(ENRON_MAILDIR_PATH)
+
 
 def main():
-	for x
+	log.info('read enron file and populate es')
+	for x in stream_paragraph(ENRON_MAILDIR_PATH):
+		populate_es(x)
+
+if __name__ == '__main__':
+	main()
 
