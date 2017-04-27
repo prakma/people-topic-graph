@@ -79,7 +79,7 @@ class MainHeaderSection():
 		o_writer.writelines(participantLine)
 
 	def get_headers_dict(self):
-		filtered_dict = {k:v for k,v in self.headers.iteritems() if k.upper() in ['FROM', 'TO', 'CC', 'BCC','X-FROM', 'X-TO', 'X-CC', 'X-BCC'] and v}
+		filtered_dict = {k:v for k,v in self.headers.iteritems() if k.upper() in ['DATE','FROM', 'TO', 'CC', 'BCC','X-FROM', 'X-TO', 'X-CC', 'X-BCC'] and v}
 		return filtered_dict
 
 	def parseCompleted(self):
@@ -458,12 +458,4 @@ def replaceUnwantedAtEnd(line):
 def writeOneLine(f, line):
 	# file = open("newfile.txt", "w")
 	f.writelines(line)
-
-
-
-
-
-# readOneFile('../enron-data/maildir/lay-k/notes_inbox/398.')
-
-# browseFolder('/home/mprakash/Documents/enron-data/maildir/lay-k', 'output/participants-2');
 
